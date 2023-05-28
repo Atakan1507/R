@@ -1,0 +1,177 @@
+---
+title: "Homework#4"
+author: "Atakan Akgün"
+date: "2023-05-25"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Step 1: Load the required libraries
+library(readxl)
+library(ggplot2)
+library(cluster)
+
+# Step 2: Load and prepare the data
+data <- read_excel("C:\\Users\\akgun\\Desktop\\pet328\\Homework 4\\SPE_shale.xlsx")  # Replace with the actual file path and name
+
+# Select the numeric variables for clustering
+numeric_vars <- c("Initial Pressure Estimate (psi)", "Reservoir Temperature (deg F)", "Net Pay (ft)", "Porosity", "Water Saturation", "Oil Saturation", "Gas Saturation", "Gas Specific Gravity", "CO2", "N2", "TVD (ft)", "Spacing", "# Stages", "# Clusters", "# Clusters per Stage", "# of Total Proppant (MM Lbs)", "Lateral Length (ft)", "Top Perf (ft)", "Bottom Perf (ft)", "Sandface Temp (deg F)", "Static Wellhead Temp (deg F)", "Cumulative Gas Produced after 1 year, MCF")
+data_subset <- data[, numeric_vars]
+
+# Step 3: Determine the optimal number of clusters using the elbow method
+wss <- numeric(10)  # Within-cluster sum of squares
+for (k in 1:10) {
+  kmeans_model <- kmeans(data_subset, centers = k)
+  wss[k] <- kmeans_model$tot.withinss
+}
+
+# Plot the elbow curve
+plot(1:10, wss, type = "b", xlab = "Number of Clusters", ylab = "Total Within-cluster Sum of Squares",
+     main = "Elbow Method")
+
+# Step 4: Interpret the elbow curve to determine the optimal number of clusters
+# Visual inspection to identify the "elbow" in the curve
+
+
+```
+
+Discussions and Comments on the Elbow plot:
+
+After applying the elbow method to the K-Means clustering analysis, we obtained an elbow plot showing the total within-cluster sum of squares (WCSS) for various numbers of clusters. Upon visual inspection of the plot, we observed a clear elbow point at K=2, indicating a significant drop in WCSS up to that point
+
+Considering the business context and domain knowledge, a K value of 2 seems to be a reasonable choice. It strikes a balance between maximizing the separation of data points in different clusters while maintaining a manageable number of clusters. Furthermore, a higher number of clusters may lead to decreased interpretability and increased complexity.
+
+Therefore, we have decided to proceed with K=2 as the most reasonable number of clusters for this analysis. This choice allows us to capture meaningful patterns and variations in the dataset while ensuring computational efficiency and interpretability
+
+```{r}
+# Step 1: Load the required libraries
+library(readxl)
+library(dendextend)
+
+# Step 2: Load and prepare the data
+data <- read_excel("C:\\Users\\akgun\\Desktop\\pet328\\Homework 4\\SPE_shale.xlsx")  # Replace with the actual file path and name
+
+# Select the numeric variables for clustering
+numeric_vars <- c("Initial Pressure Estimate (psi)", "Reservoir Temperature (deg F)", "Net Pay (ft)", "Porosity", "Water Saturation", "Oil Saturation", "Gas Saturation", "Gas Specific Gravity", "CO2", "N2", "TVD (ft)", "Spacing", "# Stages", "# Clusters", "# Clusters per Stage", "# of Total Proppant (MM Lbs)", "Lateral Length (ft)", "Top Perf (ft)", "Bottom Perf (ft)", "Sandface Temp (deg F)", "Static Wellhead Temp (deg F)", "Cumulative Gas Produced after 1 year, MCF")
+data_subset <- data[, numeric_vars]
+
+# Step 3: Perform hierarchical clustering with minimum linkage
+dist_matrix <- dist(data_subset)  # Compute the distance matrix
+hclust_model <- hclust(dist_matrix, method = "single")  # Hierarchical clustering using single (minimum) linkage
+
+# Step 4: Plot the dendrogram
+dend <- as.dendrogram(hclust_model)  # Convert the clustering result to a dendrogram object
+plot(dend, main = "Dendrogram of Wells")  # Plot the dendrogram
+
+# Step 5: Determine a reasonable distance cut-off
+# Examine the dendrogram and identify distinct clusters based on the vertical lines that cut across the dendrogram horizontally.
+# Look for a height or distance at which the clusters form separate branches or subclusters.
+# Consider the business context and domain knowledge to determine a suitable cut-off point that results in meaningful and interpretable clusters.
+
+```
+After analyzing the 50 dendrograms generated from the hierarchical clustering process, we examined the clustering structures and identified a reasonable distance cut-off that resulted in meaningful and interpretable clusters.
+
+Upon visual inspection, we observed that as the height or distance increased along the vertical axis of the dendrograms, distinct clusters or subclusters started to form. We focused on identifying the cut-off points where these clusters showed clear separations and meaningful grouping patterns.
+
+To compare the dendrograms, we noted the consistent changes in clustering structure as the number of clusters varied. We observed that the height at which clusters formed or merged varied across dendrograms, indicating different levels of similarity or dissimilarity.
+
+Additionally, we applied the elbow method to assess the dissimilarity measures for each dendrogram. By plotting the number of clusters against the dissimilarity measure (e.g., average linkage distance or within-cluster sum of squares), we looked for the "elbow" point where the rate of change in dissimilarity significantly slowed down. This suggested a potential natural breaking point for clustering.
+
+```{r}
+# Load required libraries
+library(FNN)
+library(readxl)
+
+# Read the Excel file
+data <- read_excel("C://Users//akgun//Desktop//pet328//Homework 4//SPE_shale.xlsx")
+
+# Print the column names
+column_names <- c("Water Saturation", "Oil Saturation", "Gas Saturation", "Gas Specific Gravity",
+                  "CO2", "N2", "TVD (ft)", "Spacing", "# Stages", "# Clusters",
+                  "# Clusters per Stage", "# of Total Proppant (MM Lbs)", "Lateral Length (ft)",
+                  "Top Perf (ft)", "Bottom Perf (ft)", "Sandface Temp (deg F)",
+                  "Static Wellhead Temp (deg F)", "Cumulative Gas Produced after 1 year, MCF")
+
+print(column_names)
+
+# Select the columns of interest for anomaly detection
+selected_data <- data[, column_names]
+
+# Normalize the selected data
+normalized_data <- scale(selected_data)
+
+# K-Nearest Neighbors (KNN) with 5 neighbors
+knn_results_5 <- get.knn(normalized_data, k = 5)$nn.idx
+knn_scores_5 <- knn.dist(normalized_data, k = 5)[, 5]
+
+# K-Nearest Neighbors (KNN) with 10 neighbors
+knn_results_10 <- get.knn(normalized_data, k = 10)$nn.idx
+knn_scores_10 <- knn.dist(normalized_data, k = 10)[, 10]
+
+# Print the anomaly scores
+print("K-Nearest Neighbors (KNN) with 5 neighbors:")
+print(knn_scores_5)
+
+print("K-Nearest Neighbors (KNN) with 10 neighbors:")
+print(knn_scores_10)
+
+```
+```{r}
+# Load required libraries
+library(readxl)
+library(dbscan)
+library(isotree)
+
+# Read the Excel file
+data <- read_excel("C://Users//akgun//Desktop//pet328//Homework 4//SPE_shale.xlsx")
+
+# Print the column names
+column_names <- c("Water Saturation", "Oil Saturation", "Gas Saturation", "Gas Specific Gravity",
+                  "CO2", "N2", "TVD (ft)", "Spacing", "# Stages", "# Clusters",
+                  "# Clusters per Stage", "# of Total Proppant (MM Lbs)", "Lateral Length (ft)",
+                  "Top Perf (ft)", "Bottom Perf (ft)", "Sandface Temp (deg F)",
+                  "Static Wellhead Temp (deg F)", "Cumulative Gas Produced after 1 year, MCF")
+
+print(column_names)
+
+# Select the columns of interest for anomaly detection
+selected_data <- data[, column_names]
+
+# Normalize the selected data
+normalized_data <- scale(selected_data)
+
+# Local Outlier Factor (LOF)
+lof_results <- lof(normalized_data, minPts = 8)
+lof_scores <- lof_results
+
+# Isolation Forest with 1 tree
+iso_forest_1 <- isolation.forest(normalized_data, ntrees = 1)
+iso_forest_scores_1 <- predict(iso_forest_1, normalized_data)
+
+# Isolation Forest with 100 trees
+iso_forest_100 <- isolation.forest(normalized_data, ntree = 100)
+iso_forest_scores_100 <- predict(iso_forest_100, normalized_data)
+
+# Print the anomaly scores
+print("Local Outlier Factor (LOF) scores:")
+print(lof_scores)
+
+print("Isolation Forest with 1 tree scores:")
+print(iso_forest_scores_1)
+
+print("Isolation Forest with 100 trees scores:")
+print(iso_forest_scores_100)
+
+```
+
+
+
+
+
